@@ -1,20 +1,76 @@
-// Firebase Imports
+//IT IS A MIRACLE THAT THIS PIECE OF SHIT WORKS, PLEASE DO NOT TOUCH IT UNLESS YOU KNOW WHAT YOU ARE DOING, EVEN  IF YOU KNOW DON'T TOUCH IT, I BEG YOU!
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { firebaseConfig, appId } from './firebase-config.js';
 
-// --- CONFIG & INITIALIZATION ---
-// User-provided Firebase config (ENSURE THIS MATCHES YOUR PROJECT)
-const firebaseConfig = {
-    apiKey: "AIzaSyAFpepDN7UNwts_R9vU1fJ9ijuneUU4Olg",
-    authDomain: "natural-inteligence.firebaseapp.com",
-    projectId: "natural-inteligence",
-    storageBucket: "natural-inteligence.firebasestorage.app",
-    messagingSenderId: "523193490361",
-    appId: "1:523193490361:web:cdf4f85ffe728f5f48f468",
-    measurementId: "G-NE2WHLS5P8"
-};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-host-guess-game';
+//THE NEXT CODE IS FOR LANGUAGE SWITCHING, IDK HOW OR WHY IT WORKS, BUT IT DOES SO DON'T TOUCH IT, PLEASE!
+import { translations } from './lang.js';
+
+let currentLang = 'en';
+
+function t(key) {
+    return translations[currentLang][key] || key;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    updateTexts();
+});
+
+
+// Example: update static text on language change
+function updateTexts() {
+    document.getElementById('coj').textContent = t('coj');
+    document.getElementById('yourName').textContent = t('yourName');
+    document.getElementById('create-game-btn').textContent = t('createGame');
+    document.getElementById('or').textContent = t('or');
+    document.getElementById('gameCode').textContent = t('gameCode');
+    document.getElementById('join-game-btn').textContent = t('joinGame');
+    document.getElementById('loading-view').textContent = t('loading');
+    document.getElementById('noPlayers').textContent = t('noPlayers');
+    document.getElementById('start-game-btn').textContent = t('startGame');
+    document.getElementById('lobby').textContent = t('lobby');
+    document.getElementById('shareCode').textContent = t('shareCode');
+    document.getElementById('waiting-for-host-text').textContent = t('waitingForHostText');
+    document.getElementById('welcome').textContent = t('welcome');
+    document.getElementById('youAreTheHost').textContent = t('youAreTheHost');
+    document.getElementById('givePrompt').textContent = t('givePrompt');
+    document.getElementById('set-theme-btn').textContent = t('setTheme');
+    document.getElementById('waitingForTheme').textContent = t('waitingForTheme').replace('${hostName}', localGameState.players[localGameState.hostId]?.name || 'The Host');
+    document.getElementById('theme').textContent = t('themeSet').replace('${data.theme}', localGameState.theme || 'No theme set yet');
+    document.getElementById('waitingForSubmit').textContent = t('waitingForSubmit');
+    document.getElementById('submit').textContent = t('submit').replace('${submittedPlayers}', localGameState.submissions ? Object.keys(localGameState.submissions).length : 0)
+        .replace('${totalPlayers}', Object.keys(localGameState.players).length - 1); // Exclude host from total players
+    document.getElementById('submitted').textContent = t('submitted');
+    document.getElementById('submit-image-btn').textContent = t('submitBtn');
+    document.getElementById('guessWho').textContent = t('guessWho');
+    document.querySelector('.guess-select option#pSelect').textContent = t('pSelect');
+    document.getElementById('submit-guesses-btn').textContent = t('lockIn');
+    document.getElementById('guessing').textContent = t('guessing').replace('${hostName}', localGameState.players[localGameState.hostId]?.name || 'The Host');
+    document.getElementById('rate').textContent = t('rate');
+    document.getElementById('rated').textContent = t('rated');
+    document.getElementById('youRate').textContent = t('youRate');
+    document.querySelectorAll('.host-guessed').forEach(el => {
+        el.innerHTML = t('hostGuessed').replace('${guessedPlayerName}', el.dataset.guessedPlayerName || 'Unknown');
+    });
+    document.getElementById('yay').textContent = t('yay');
+    document.getElementById('nah').textContent = t('nah');
+    document.getElementById('submit-ratings-btn').textContent = t('submitRatings');
+    document.getElementById('calculate-scores-btn').textContent = t('calculateScores');
+    document.getElementById('over').textContent = t('over');
+    document.getElementById('finalScores').textContent = t('finalScores');
+    document.getElementById('play-again-btn').textContent = t('playAgain');
+    document.getElementById('waitingFHTS').textContent = t('waitingFHTS').replace('${hostName}', localGameState.players[localGameState.hostId]?.name || 'The Host');
+
+}
+
+// Listen for language changes
+document.getElementById('lang-switcher').addEventListener('change', (e) => {
+    currentLang = e.target.value;
+    updateTexts();
+});
+
+// END OF LANGUAGE SWITCHING CODE?
 
 let app, db, auth, userId, gameUnsubscribe;
 let currentGameCode = null;
@@ -64,7 +120,7 @@ const showNotification = (message, isError = false) => {
 };
 
 const generateGameCode = () => {
-    const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ1234567890';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
     let result = '';
     for (let i = 0; i < 6; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -354,7 +410,7 @@ const calculateScoresAndEndRound = async () => {
     // Host scores for correct guesses
     for (const submitterId in guesses) {
         if (guesses[submitterId] === submitterId) {
-            newScores[hostId] = (newScores[hostId] || 0) + 100;
+            newScores[hostId] = (newScores[hostId] || 0) + 10;
         }
     }
 
@@ -408,7 +464,7 @@ const playAgain = async () => {
 const renderPlayers = (players) => {
     playersList.innerHTML = '';
     if (!players || Object.keys(players).length === 0) {
-        playersList.innerHTML = '<p class="text-gray-400">No players yet...</p>';
+        playersList.innerHTML = '<p id="noPlayers" class="text-gray-400">No players yet...</p>';
         return;
     }
     console.log("Rendering Players. Current localGameState.lobbyOwnerId:", localGameState.lobbyOwnerId); // Log
@@ -431,14 +487,17 @@ const renderLobby = (data) => {
     console.log("Rendering Lobby. data.lobbyOwnerId:", data.lobbyOwnerId, "Current userId:", userId, "Is Lobby Owner:", isLobbyOwner); // Log
     const content = `
                 <div class="text-center">
-                    <h2 class="text-3xl font-bold mb-4 text-white">Lobby</h2>
-                    <p class="text-lg text-gray-400 mb-2">Share this code with your friends:</p>
+                    <h2 id="lobby" class="text-3xl font-bold mb-4 text-white">Lobby</h2>
+                    <p id="shareCode" class="text-lg text-gray-400 mb-2">Share this code with your friends:</p>
                     <div class="bg-gray-900 text-white text-4xl font-bold tracking-widest p-4 rounded-lg inline-block mb-6 border border-gray-700">${currentGameCode}</div>
                     <p id="waiting-for-host-text" class="text-lg text-gray-300 mb-6 ${isLobbyOwner ? 'hidden' : ''}">Waiting for the Lobby Host to start the game.</p>
                     <button id="start-game-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition duration-300 shadow-lg ${!isLobbyOwner ? 'hidden' : ''}">Start Game</button>
                 </div>
             `;
     gameContent.innerHTML = content;
+    setTimeout(() => {
+        updateTexts();
+    }, 0);
 };
 
 const renderThemeSetting = (data) => {
@@ -446,14 +505,14 @@ const renderThemeSetting = (data) => {
     let content = '';
     if (data.hostId === userId) {
         content = `
-                    <h2 class="text-2xl font-bold mb-4 text-center text-white">You are the Round Host!</h2>
-                    <p class="text-lg mb-6 text-center text-gray-300">Give the players a theme or a question.</p>
-                    <input id="theme-input" type="text" placeholder="e.g., Worst ways to spend money" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-white">
+                    <h2 id="youAreTheHost" class="text-2xl font-bold mb-4 text-center text-white">You are the Round Host!</h2>
+                    <p id="givePrompt" class="text-lg mb-6 text-center text-gray-300">Give the players a prompt</p>
+                    <input id="theme-input" type="text" placeholder="e.g., a funny image..." class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-white">
                     <button id="set-theme-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 shadow-md">Set Theme</button>
                 `;
     } else {
         const hostName = data.players[data.hostId]?.name || 'The Host';
-        content = `<h2 class="text-2xl font-bold mb-4 text-center animate-pulse text-gray-300">Waiting for ${hostName} to set a theme...</h2>`;
+        content = `<h2 id="waitingForTheme" class="text-2xl font-bold mb-4 text-center animate-pulse text-gray-300">Waiting for ${hostName} to set a theme...</h2>`;
     }
     gameContent.innerHTML = content;
 };
@@ -465,20 +524,20 @@ const renderSubmission = (data) => {
         const submittedPlayers = Object.keys(data.submissions).length;
         const totalPlayers = Object.keys(data.players).length - 1; // Host doesn't submit
         content = `
-                    <h2 class="text-2xl font-bold mb-2 text-center text-white">Theme: "${data.theme}"</h2>
-                    <p class="text-lg mb-6 text-center text-gray-300">Waiting for players to submit their images...</p>
-                    <p class="text-xl font-bold text-center animate-pulse text-white">${submittedPlayers} / ${totalPlayers} submitted</p>
+                    <h2 id="theme" class="text-2xl font-bold mb-2 text-center text-white">Theme: "${data.theme}"</h2>
+                    <p id="waitingForSubmit" class="text-lg mb-6 text-center text-gray-300">Waiting for players to submit their images...</p>
+                    <p id="submit" class="text-xl font-bold text-center animate-pulse text-white">${submittedPlayers} / ${totalPlayers} submitted</p>
                 `;
     } else {
         if (data.submissions[userId]) {
             content = `
-                        <h2 class="text-2xl font-bold mb-2 text-center text-white">Theme: "${data.theme}"</h2>
-                        <p class="text-lg mb-4 text-center text-gray-300">Your submission is in! Waiting for others...</p>
+                        <h2 id="theme" class="text-2xl font-bold mb-2 text-center text-white">Theme: "${data.theme}"</h2>
+                        <p id="submitted" class="text-lg mb-4 text-center text-gray-300">Your submission is in! Waiting for others...</p>
                         <img src="${data.submissions[userId].imageUrl}" class="max-w-xs mx-auto rounded-lg shadow-lg border border-gray-600" onerror="this.onerror=null;this.src='https://placehold.co/400x300/334155/e2e8f0?text=Invalid+Image';">
                     `;
         } else {
             content = `
-                        <h2 class="text-2xl font-bold mb-2 text-center text-white">Theme: "${data.theme}"</h2>
+                        <h2 id="theme" class="text-2xl font-bold mb-2 text-center text-white">Theme: "${data.theme}"</h2>
                         <p class="text-lg mb-4 text-center text-gray-300">Find an image on the web that fits the theme and paste the URL below.</p>
                         <input id="image-url-input" type="url" placeholder="https://example.com/image.png" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-white">
                         <button id="submit-image-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 shadow-md">Submit Image</button>
@@ -490,12 +549,12 @@ const renderSubmission = (data) => {
 
 const renderGuessing = (data) => {
     showView(gameView);
-    let content = `<h2 class="text-2xl font-bold mb-4 text-center text-white">Theme: "${data.theme}"</h2>`;
+    let content = `<h2 id="theme" class="text-2xl font-bold mb-4 text-center text-white">Theme: "${data.theme}"</h2>`;
     // Filter out the host from the list of players to guess
     const playersToGuess = Object.values(data.players).filter(p => p.name !== data.players[data.hostId].name);
 
     if (data.hostId === userId) {
-        content += `<p class="text-lg mb-6 text-center text-gray-300">Guess who submitted which image!</p>`;
+        content += `<p id="guessWho" class="text-lg mb-6 text-center text-gray-300">Guess who submitted which image!</p>`;
         const submissionsGrid = document.createElement('div');
         submissionsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
 
@@ -509,7 +568,7 @@ const renderGuessing = (data) => {
                         <div class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col items-center border border-gray-700">
                             <img src="${imageUrl}" class="w-full h-48 object-contain rounded-md mb-4 border border-gray-600" onerror="this.onerror=null;this.src='https://placehold.co/400x300/334155/e2e8f0?text=Invalid+Image';">
                             <select data-submitter="${submitter}" class="guess-select w-full p-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none text-white">
-                                <option value="">Select a player...</option>
+                                <option id="pSelect" value="">Select a player...</option>
                                 ${options}
                             </select>
                         </div>
@@ -519,7 +578,7 @@ const renderGuessing = (data) => {
         content += `<button id="submit-guesses-btn" class="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 shadow-md">Lock In Guesses</button>`;
     } else {
         const hostName = data.players[data.hostId]?.name || 'The Host';
-        content += `<p class="text-lg mb-6 text-center text-gray-300 animate-pulse">${hostName} is guessing...</p>`;
+        content += `<p id="guessing" class="text-lg mb-6 text-center text-gray-300 animate-pulse">${hostName} is guessing...</p>`;
         const submissionsGrid = document.createElement('div');
         submissionsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
         Object.values(data.submissions).forEach(({ imageUrl }) => {
@@ -536,15 +595,15 @@ const renderGuessing = (data) => {
 
 const renderRating = (data) => {
     showView(gameView);
-    let content = `<h2 class="text-2xl font-bold mb-4 text-center text-white">Theme: "${data.theme}"</h2>`;
+    let content = `<h2 id="theme" class="text-2xl font-bold mb-4 text-center text-white">Theme: "${data.theme}"</h2>`;
 
     if (data.hostId === userId) {
-        content += `<p class="text-lg mb-6 text-center text-gray-300">Waiting for other players to rate the submissions.</p>`;
+        content += `<p id="rate" class="text-lg mb-6 text-center text-gray-300">Waiting for other players to rate the submissions.</p>`;
     } else {
         if(data.ratings && data.ratings[userId]){
-            content += `<p class="text-lg mb-6 text-center text-gray-300">Thanks for rating! Waiting for others...</p>`;
+            content += `<p id="rated" class="text-lg mb-6 text-center text-gray-300">Thanks for rating! Waiting for others...</p>`;
         } else {
-            content += `<p class="text-lg mb-6 text-center text-gray-300">Rate your favorite submissions! (You can't rate your own)</p>`;
+            content += `<p id="youRate" class="text-lg mb-6 text-center text-gray-300">Rate your favorite submissions! (You can't rate your own)</p>`;
         }
     }
 
@@ -556,11 +615,11 @@ const renderRating = (data) => {
         const guessedPlayerName = data.players[guessedPlayerId]?.name || 'Unknown';
         const isCorrect = guessedPlayerId === submitter;
 
-        let guessResultHtml = `<p class="text-center mt-2 text-sm text-gray-300">Host guessed: <span class="font-bold">${guessedPlayerName}</span></p>`;
+        let guessResultHtml = `<p id="hostGuessed" class="text-center mt-2 text-sm text-gray-300">Host guessed: <span class="font-bold">${guessedPlayerName}</span></p>`;
         if(isCorrect){
-            guessResultHtml += `<p class="text-center text-green-400 font-bold">CORRECT!</p>`;
+            guessResultHtml += `<p id="yay" class="text-center text-green-400 font-bold">CORRECT!</p>`;
         } else {
-            guessResultHtml += `<p class="text-center text-red-400 font-bold">WRONG!</p>`;
+            guessResultHtml += `<p id="nah" class="text-center text-red-400 font-bold">WRONG!</p>`;
         }
 
         let ratingButtonHtml = '';
@@ -599,8 +658,8 @@ const renderRating = (data) => {
 
 const renderResults = (data) => {
     showView(gameView);
-    let content = `<h2 class="text-2xl font-bold mb-6 text-center text-white">Round Over!</h2>`;
-    content += `<h3 class="text-xl font-semibold mb-4 text-center text-white">Final Scores</h3>`;
+    let content = `<h2 id="over" class="text-2xl font-bold mb-6 text-center text-white">Round Over!</h2>`;
+    content += `<h3 id="finalScores" class="text-xl font-semibold mb-4 text-center text-white">Final Scores</h3>`;
     const sortedPlayers = Object.values(data.players).sort((a, b) => (b.score || 0) - (a.score || 0));
 
     const scoresList = document.createElement('div');
@@ -619,13 +678,17 @@ const renderResults = (data) => {
     if (userId === data.hostId) {
         content += `<button id="play-again-btn" class="w-full max-w-md mx-auto mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 shadow-md">Play Again</button>`;
     } else {
-        content += `<p class="text-lg text-gray-300 mt-8 text-center">Waiting for the Lobby Host to start a new round...</p>`;
+        content += `<p id="waitingFHTS" class="text-lg text-gray-300 mt-8 text-center">Waiting for the Lobby Host to start a new round...</p>`;
     }
     gameContent.innerHTML = content;
 };
 
 // --- MAIN GAME LOOP (via onSnapshot) ---
 const handleGameStateChange = (data) => {
+    if (hostAnimationOverlay && !hostAnimationOverlay.classList.contains('hidden')) {
+        hostAnimationOverlay.classList.add('hidden');
+        hostAnimationOverlay.style.display = 'none';
+    }
     console.log("--- Game State Changed ---"); // Log
     console.log("Current Tab User ID:", userId); // Log
     console.log("Received Data:", data); // Log
@@ -752,5 +815,9 @@ window.onload = async () => {
     } catch (error) {
         console.error("Initialization Error:", error);
         document.body.innerHTML = `<div class="text-white text-center p-8 bg-red-800 rounded-lg mx-auto max-w-md mt-20">Error initializing the application: ${error.message}. Please check your Firebase setup.</div>`;
+    }
+    updateTexts();
+    while (true) {
+        updateTexts();
     }
 };
